@@ -28,7 +28,6 @@ export const updateWorkflowNodes = async (
     .eq("id", workflowId)
     .single();
 
-  console.log(currentData);
   if (fetchError) {
     console.error("Error fetching current data:", fetchError);
     throw fetchError;

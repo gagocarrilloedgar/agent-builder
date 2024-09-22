@@ -148,38 +148,29 @@ export default function WorkflowProvider({
     [nodes]
   );
 
-  const updateUserDataProp =
+  const updateUserDataProp = useCallback(
     <T extends keyof NonNullable<ReactFlowNode["userData"]>[number]>(
       nodeId: string,
       property: T,
       index: number
     ) =>
     (value: NonNullable<ReactFlowNode["userData"]>[number][T]) => {
-      setNodes((nodes) => {
-        const newNodes = nodes.map((node) => {
+      setNodes((prevNodes) => {
+        return prevNodes.map((node) => {
           if (node.id !== nodeId) return node;
 
           const newUserData = node.userData?.map((data, i) => {
             if (i !== index) return data;
-
-            return {
-              ...data,
-              [property]: value,
-            };
+            return { ...data, [property]: value };
           });
 
-          return {
-            ...node,
-            userData: newUserData,
-          };
+          return { ...node, userData: newUserData };
         });
-
-        return newNodes;
       });
-
       setNodeChanged(true);
-    };
-
+    },
+    []
+  );
   const updateNodeProperty =
     <K extends keyof ReactFlowNode>(nodeId: string, property: K) =>
     (value: ReactFlowNode[K]) => {
@@ -263,7 +254,7 @@ export default function WorkflowProvider({
       } finally {
         setIsSaving(false);
       }
-    }, 500),
+    }, 1500),
     [nodes, edges, currentWorkflow, toast]
   );
 
