@@ -53,8 +53,6 @@ export function BuilderComponent({
     event.dataTransfer.dropEffect = "move";
   }, []);
 
-  console.log("nodes", nodes.length);
-
   const onDrop = useCallback(
     (event: DragEvent) => {
       event.preventDefault();

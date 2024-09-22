@@ -2,10 +2,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { capitalize } from "@/lib/capitalize";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@radix-ui/react-tooltip";
 import { Handle, NodeProps, Position } from "@xyflow/react";
-import { EllipsisVertical, Phone, PhoneOff, Waypoints } from "lucide-react";
+import {
+  AlertCircle,
+  EllipsisVertical,
+  Phone,
+  PhoneOff,
+  Waypoints,
+} from "lucide-react";
 import { ComponentPropsWithoutRef, memo, useEffect } from "react";
 import { useCurrentWorkflow } from "./provider";
 
@@ -54,7 +61,8 @@ function BaseNodeComponent({
   isEnd,
   selected,
   data,
-  id}: BaseNodeProps) {
+  id,
+}: BaseNodeProps) {
   const description = data.label?.toString();
   const { onSetCurrentNode, rawWorkflow } = useCurrentWorkflow();
 
@@ -80,6 +88,18 @@ function BaseNodeComponent({
       >
         <p className="text-xs text-center text-white">{label}</p>
       </div>
+      {!title && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <section className="flex bg-red-500 font-light rounded-full absolute -top-1.5 -right-1.5 w-4 h-4 justify-center items-center">
+              <AlertCircle size="18" color="white" />
+            </section>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={2}>
+            Some noe properties are missing
+          </TooltipContent>
+        </Tooltip>
+      )}
       <Handle
         className={`h-3 w-3 ${
           selected ? "bg-primary" : "bg-border"
@@ -93,7 +113,9 @@ function BaseNodeComponent({
           <section className={cn("p-0.5 rounded-sm", className)}>
             {children}
           </section>
-          <p className="text-base font-medium">{title}</p>
+          <p className="text-base font-medium">
+            {capitalize(title?.replace("_", " "))}
+          </p>
         </div>
         <Tooltip>
           <TooltipTrigger asChild>
