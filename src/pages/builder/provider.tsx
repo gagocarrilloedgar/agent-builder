@@ -1,9 +1,19 @@
-import { Edge } from "@xyflow/react";
+import {
+  Edge,
+  OnEdgesChange,
+  OnNodesChange,
+  useEdgesState,
+  useNodesState,
+} from "@xyflow/react";
 
 import { getWorkflows } from "@/services/workflows/subpabse";
 
 import { formatName } from "@/lib/formatSnake";
-import { FlowWorkflow, ReactFlowNode } from "@/services/workflows/types";
+import {
+  FlowWorkflow,
+  ReactFlowEdge,
+  ReactFlowNode,
+} from "@/services/workflows/types";
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import { createContext, useContext, useEffect, useState } from "react";
@@ -11,13 +21,40 @@ import { createContext, useContext, useEffect, useState } from "react";
 const WorkflowContext = createContext<{
   currentWorkflow: FlowWorkflow | null;
   currentNode: ReactFlowNode | null;
+  edges: ReactFlowEdge[];
+  nodes: ReactFlowNode[];
+  setNodes: React.Dispatch<React.SetStateAction<ReactFlowNode[]>>;
+  setEdges: React.Dispatch<React.SetStateAction<ReactFlowEdge[]>>;
   onSetCurrentNode: (nodeId: string | null) => void;
   handleNewNode: (node: ReactFlowNode) => void;
+  updateUserDataProp: <
+    T extends keyof NonNullable<ReactFlowNode["userData"]>[number]
+  >(
+    nodeId: string,
+    property: T,
+    index: number
+  ) => (value: NonNullable<ReactFlowNode["userData"]>[number][T]) => void;
+  updateNodeProperty: <K extends keyof ReactFlowNode>(
+    nodeId: string,
+    property: K
+  ) => (value: ReactFlowNode[K]) => void;
+  onNodesChange: OnNodesChange<ReactFlowNode>;
+  onEdgesChange: OnEdgesChange<ReactFlowEdge>;
+  addNewUserData: () => void;
 }>({
   currentWorkflow: null,
   currentNode: null,
+  edges: [],
+  nodes: [],
+  setNodes: () => {},
+  setEdges: () => {},
+  onNodesChange: () => {},
+  onEdgesChange: () => {},
   onSetCurrentNode: () => {},
   handleNewNode: () => {},
+  updateNodeProperty: () => () => {},
+  updateUserDataProp: () => () => {},
+  addNewUserData: () => {},
 });
 
 export default function WorkflowProvider({
@@ -25,6 +62,8 @@ export default function WorkflowProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const [nodes, setNodes, onNodesChange] = useNodesState<ReactFlowNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<ReactFlowEdge>([]);
   const [currentWorkflow, setCurrentWorkflow] = useState<FlowWorkflow | null>(
     null
   );
@@ -36,6 +75,11 @@ export default function WorkflowProvider({
       const res = await getWorkflows();
       const currenWorkflow = res[0];
       if (!currenWorkflow) return;
+
+      setCurrentWorkflow({
+        id: currenWorkflow.id,
+        generalInstructions: currenWorkflow.data.generalInstructions,
+      });
 
       const currentNodes = currenWorkflow.data.nodes.map(
         (node, index: number) => {
@@ -70,44 +114,107 @@ export default function WorkflowProvider({
         currentEdges
       );
 
-      setCurrentWorkflow({
-        id: currenWorkflow.id,
-        data: {
-          generalInstructions: currenWorkflow.data.generalInstructions,
-          nodes: layoutedNodes,
-          edges: currentEdges,
-        },
-      });
+      setNodes(layoutedNodes);
+      setEdges(currentEdges);
     }
     load();
-  }, []);
+  }, [setNodes, setEdges]);
 
   const onSetCurrentNode = (nodeId: string | null) => {
-    const node = currentWorkflow?.data.nodes.find((node) => node.id === nodeId);
+    const node = nodes.find((node) => node.id === nodeId);
     setCurrentNode(node || null);
   };
 
   const handleNewNode = (node: ReactFlowNode) => {
-    setCurrentWorkflow((workflow) => {
-      if (!workflow) return null;
+    setNodes((nodes) => {
+      const newNodes = [...nodes, node];
+      return layoutNodesWithDagre(newNodes, edges);
+    });
+  };
 
-      const newNodes = [...workflow.data.nodes, node];
-      const newEdges = [...workflow.data.edges];
+  const updateUserDataProp =
+    <T extends keyof NonNullable<ReactFlowNode["userData"]>[number]>(
+      nodeId: string,
+      property: T,
+      index: number
+    ) =>
+    (value: NonNullable<ReactFlowNode["userData"]>[number][T]) => {
+      setNodes((nodes) => {
+        const newNodes = nodes.map((node) => {
+          if (node.id !== nodeId) return node;
 
-      return {
-        ...workflow,
-        data: {
-          ...workflow.data,
-          nodes: newNodes,
-          edges: newEdges,
-        },
-      };
+          const newUserData = node.userData?.map((data, i) => {
+            if (i !== index) return data;
+
+            return {
+              ...data,
+              [property]: value,
+            };
+          });
+
+          return {
+            ...node,
+            userData: newUserData,
+          };
+        });
+
+        return layoutNodesWithDagre(newNodes, edges);
+      });
+    };
+
+  const updateNodeProperty =
+    <K extends keyof ReactFlowNode>(nodeId: string, property: K) =>
+    (value: ReactFlowNode[K]) => {
+      setNodes((nodes) => {
+        const newNodes = nodes.map((node) => {
+          if (node.id !== nodeId) return node;
+
+          return {
+            ...node,
+            [property]: value,
+          };
+        });
+
+        return layoutNodesWithDagre(newNodes, edges);
+      });
+    };
+
+  const addNewUserData = () => {
+    setNodes((nodes) => {
+      const newNodes = nodes.map((node) => {
+        if (node.id !== currentNode?.id) return node;
+
+        return {
+          ...node,
+          userData: node.userData?.concat({
+            name: "",
+            dataType: "string",
+            description: "",
+          }),
+        };
+      });
+
+      return layoutNodesWithDagre(newNodes, edges);
     });
   };
 
   return (
     <WorkflowContext.Provider
-      value={{ currentWorkflow, currentNode, onSetCurrentNode, handleNewNode }}
+      value={{
+        currentWorkflow,
+        currentNode,
+        nodes,
+        edges,
+        setNodes,
+        onNodesChange,
+        onEdgesChange,
+        setEdges,
+        onSetCurrentNode,
+        handleNewNode,
+        updateNodeProperty,
+        updateUserDataProp,
+        addNewUserData,
+      }}
     >
       {children}
     </WorkflowContext.Provider>

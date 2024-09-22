@@ -6,8 +6,6 @@ import {
   FinalConnectionState,
   MiniMap,
   ReactFlow,
-  useEdgesState,
-  useNodesState,
   useReactFlow,
 } from "@xyflow/react";
 
@@ -20,7 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDnD } from "@/DnDProvider";
-import { FlowWorkflow, NodeNodeTypes } from "@/services/workflows/types";
+import { NodeNodeTypes } from "@/services/workflows/types";
 import "@xyflow/react/dist/style.css";
 import { PhoneOff, Waypoints } from "lucide-react";
 import { DragEvent, useCallback, useEffect, useState } from "react";
@@ -29,18 +27,18 @@ import { useCurrentWorkflow } from "./provider";
 
 // Constants for spacing
 
-export function BuilderComponent({
-  currentWorkflow,
-}: {
-  currentWorkflow: FlowWorkflow;
-}) {
-  const { onSetCurrentNode, handleNewNode: addNode } = useCurrentWorkflow();
-  const [nodes, setNodes, onNodesChange] = useNodesState(
-    currentWorkflow.data.nodes
-  );
-  const [edges, setEdges, onEdgesChange] = useEdgesState(
-    currentWorkflow.data.edges
-  );
+export function BuilderComponent() {
+  const {
+    nodes,
+    setNodes,
+    onNodesChange,
+    edges,
+    setEdges,
+    onEdgesChange,
+    onSetCurrentNode,
+    handleNewNode: addNode,
+  } = useCurrentWorkflow();
+
   const [open, setOpen] = useState(false);
   const [onEndConntectionState, setOnEndConntectionState] =
     useState<FinalConnectionState | null>(null);
@@ -225,11 +223,14 @@ export function BuilderComponent({
 }
 
 export default function Builder() {
-  const { currentWorkflow } = useCurrentWorkflow();
+  const { nodes } = useCurrentWorkflow();
 
-  if (!currentWorkflow) {
-    return <Background variant={BackgroundVariant.Dots} gap={20} />;
-  }
+  if (!nodes)
+    return (
+      <>
+        <Background variant={BackgroundVariant.Dots} gap={20} />;
+      </>
+    );
 
-  return <BuilderComponent currentWorkflow={currentWorkflow} />;
+  return <BuilderComponent />;
 }

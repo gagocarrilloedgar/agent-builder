@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { capitalize } from "@/lib/capitalize";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@radix-ui/react-tooltip";
 import { Handle, NodeProps, Position } from "@xyflow/react";
@@ -60,13 +59,10 @@ function BaseNodeComponent({
   isStart,
   isEnd,
   selected,
-  data,
   id,
-  ...props
 }: BaseNodeProps) {
-  const description = data.label?.toString();
-  const { onSetCurrentNode, currentWorkflow } = useCurrentWorkflow();
-  console.log(props);
+  const { onSetCurrentNode, nodes } = useCurrentWorkflow();
+  const currentNode = nodes?.find((node) => node.id === id);
 
   useEffect(() => {
     if (selected && id) {
@@ -76,9 +72,13 @@ function BaseNodeComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, id]);
 
-  const title = currentWorkflow?.data.nodes.find(
-    (node) => node.id === id
-  )?.nodeName;
+  const title = currentNode?.nodeName;
+  const description = currentNode?.prompt;
+
+  const nodeDataMissing =
+    !title ||
+    !description ||
+    (!currentNode.nodeEnterCondition && currentNode.type !== "start_call");
 
   return (
     <Card className={cn("relative", selected && "border-primary")}>
@@ -90,7 +90,7 @@ function BaseNodeComponent({
       >
         <p className="text-xs text-center text-white">{label}</p>
       </div>
-      {!title && (
+      {nodeDataMissing && (
         <Tooltip>
           <TooltipTrigger asChild>
             <section className="flex bg-red-500 font-light rounded-full absolute -top-1.5 -right-1.5 w-4 h-4 justify-center items-center">
@@ -115,9 +115,7 @@ function BaseNodeComponent({
           <section className={cn("p-0.5 rounded-sm", className)}>
             {children}
           </section>
-          <p className="text-base font-medium">
-            {capitalize(title?.replace("_", " "))}
-          </p>
+          <p className="text-base font-medium">{title}</p>
         </div>
         <Tooltip>
           <TooltipTrigger asChild>

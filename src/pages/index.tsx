@@ -14,8 +14,8 @@ import {
   Book,
   Bot,
   Code2,
+  List,
   Settings,
-  SquareTerminal,
   SquareUser,
   Workflow,
 } from "lucide-react";
@@ -23,7 +23,16 @@ import { DragEvent, PropsWithChildren } from "react";
 import { useCurrentWorkflow } from "./builder/provider";
 
 export function Layout({ children }: PropsWithChildren) {
-  const { currentNode } = useCurrentWorkflow();
+  const {
+    currentNode: selected,
+    nodes,
+    updateNodeProperty,
+    updateUserDataProp,
+    addNewUserData,
+  } = useCurrentWorkflow();
+
+  const currentNode = nodes.find((node) => node.id === selected?.id);
+
   const { setNodeType } = useDnD();
   const onDragStart = (
     nodeType: NodeNodeTypes,
@@ -52,11 +61,11 @@ export function Layout({ children }: PropsWithChildren) {
                 className="rounded-lg bg-muted"
                 aria-label="Playground"
               >
-                <SquareTerminal className="h-5 w-5" />
+                <List className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={5}>
-              Playground
+              Workflow builder
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -161,11 +170,16 @@ export function Layout({ children }: PropsWithChildren) {
         )}
         {currentNode && (
           <div className="flex flex-col w-full h-full border-l py-2 px-4 gap-4">
-            <p>{currentNode?.nodeName}</p>
+            <p>{nodes.find((node) => node.id === currentNode.id)?.nodeName}</p>
             <InputWrapper>
               <Label htmlFor="name">Node name</Label>
               <Input
-                value={currentNode?.nodeName}
+                value={
+                  nodes.find((node) => node.id === currentNode.id)?.nodeName
+                }
+                onChange={(e) =>
+                  updateNodeProperty(currentNode.id, "nodeName")(e.target.value)
+                }
                 type="text"
                 id="node_name"
                 placeholder="Enter node name"
@@ -175,6 +189,12 @@ export function Layout({ children }: PropsWithChildren) {
               <Label htmlFor="email">Condition to start</Label>
               <Input
                 value={currentNode?.nodeEnterCondition}
+                onChange={(e) =>
+                  updateNodeProperty(
+                    currentNode.id,
+                    "nodeEnterCondition"
+                  )(e.target.value)
+                }
                 type="text"
                 id="condition"
                 placeholder="Enter condition"
@@ -185,25 +205,49 @@ export function Layout({ children }: PropsWithChildren) {
               <Textarea
                 rows={8}
                 value={currentNode?.prompt}
+                onChange={(e) =>
+                  updateNodeProperty(currentNode.id, "prompt")(e.target.value)
+                }
                 placeholder="Type your prompt here"
                 id="prompt"
               />
             </InputWrapper>
             <Separator />
-            <p className="text-md font-semibold">User data</p>
-            <p className="text-sm ">
-              Please define the user data that should be collected at this node
-            </p>
-            {currentNode?.userData?.map((value, index) => (
-              <InputWrapper key={index.toString()}>
-                <Label id={`${index}-${value}`}>{value.description}</Label>
-                <Input
-                  value={value.name}
-                  type="text"
-                  id={`${index}-${value}`}
-                />
-              </InputWrapper>
-            ))}
+            <div className="flex flex-col gap-4">
+              <section>
+                <p className="text-md font-semibold">User data</p>
+                <p className="text-sm ">
+                  Please define the user data that should be collected at this
+                  node
+                </p>
+              </section>
+              <section className="flex flex-col gap-2">
+                {currentNode?.userData?.map((value, index) => (
+                  <InputWrapper key={index.toString()}>
+                    <Label id={`${index}-${value}`}>{value.description}</Label>
+                    <Input
+                      value={value.name}
+                      onChange={(e) =>
+                        updateUserDataProp(
+                          currentNode.id,
+                          "name",
+                          index
+                        )(e.target.value)
+                      }
+                      type="text"
+                      id={`${index}-${value}`}
+                    />
+                  </InputWrapper>
+                ))}
+              </section>
+              <Button
+                onClick={addNewUserData}
+                variant="outline"
+                className="w-full mt-auto"
+              >
+                Collect new user property
+              </Button>
+            </div>
           </div>
         )}
       </aside>

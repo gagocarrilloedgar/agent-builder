@@ -60,6 +60,7 @@ export interface ReactFlowNode {
   data: {
     label: string;
   };
+  selected?: boolean;
   userData?: {
     name: string;
     dataType: UserDataType;
@@ -77,9 +78,5 @@ export interface ReactFlowEdge {
 
 export interface FlowWorkflow {
   id: number;
-  data: {
-    generalInstructions: string;
-    nodes: ReactFlowNode[];
-    edges: ReactFlowEdge[];
-  };
+  generalInstructions: string;
 }

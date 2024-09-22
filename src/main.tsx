@@ -18,14 +18,14 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <TooltipProvider delayDuration={0}>
         <DnDProvider>
-          <WorkflowProvider>
-            <ReactFlowProvider>
+          <ReactFlowProvider>
+            <WorkflowProvider>
               <Layout>
                 <Builder />
                 <Toaster />
               </Layout>
-            </ReactFlowProvider>
-          </WorkflowProvider>
+            </WorkflowProvider>
+          </ReactFlowProvider>
         </DnDProvider>
       </TooltipProvider>
     </ThemeProvider>

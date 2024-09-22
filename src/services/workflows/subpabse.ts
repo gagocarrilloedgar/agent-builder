@@ -14,7 +14,6 @@ export const getWorkflows = async (): Promise<UIWorkflow[]> => {
   if (!data) return [];
 
   const converted = convertKeysToCamelCase(data) as UIWorkflow[];
-  console.log(converted);
   return converted;
 };
 
