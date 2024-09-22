@@ -36,6 +36,7 @@ export function BuilderComponent() {
     setEdges,
     onEdgesChange,
     onSetCurrentNode,
+    setEdgeChanged,
   } = useCurrentWorkflow();
 
   const [open, setOpen] = useState(false);
@@ -88,7 +89,14 @@ export function BuilderComponent() {
 
   const onConnect = useCallback(
     (params: Connection) => {
-      setEdges((eds) => addEdge({ ...params, animated: true }, eds));
+      setEdgeChanged(true);
+      setEdges((eds) => {
+        const lastId = Number(eds[eds.length - 1]?.id) + 1 || 0;
+        return addEdge(
+          { ...params, id: lastId.toString(), animated: true },
+          eds
+        );
+      });
     },
     [setEdges]
   );

@@ -1,6 +1,6 @@
 // src/services/supabase.ts
 import { createClient } from "@supabase/supabase-js";
-import { ReactFlowNode, UIWorkflow } from "./types";
+import { ReactFlowEdge, ReactFlowNode, UIWorkflow } from "./types";
 
 const supabaseUrl = "https://erlpcxikshxtxckucexs.supabase.co";
 const supabaseKey =
@@ -17,15 +17,10 @@ export const getWorkflows = async (): Promise<UIWorkflow[]> => {
   return converted;
 };
 
-export const saveWorkflow = async (workflow: UIWorkflow): Promise<void> => {
-  const { error } = await supabase.from("agents_0507").upsert(workflow);
-
-  if (error) throw error;
-};
-
 export const updateWorkflowNodes = async (
   workflowId: number,
-  nodes: ReactFlowNode[]
+  nodes?: ReactFlowNode[],
+  edges?: ReactFlowEdge[]
 ) => {
   const { data: currentData, error: fetchError } = await supabase
     .from("agents_0507")
@@ -33,12 +28,13 @@ export const updateWorkflowNodes = async (
     .eq("id", workflowId)
     .single();
 
+  console.log(currentData);
   if (fetchError) {
     console.error("Error fetching current data:", fetchError);
     throw fetchError;
   }
 
-  const updatedNodes = nodes.map((node) => {
+  const updatedNodes = nodes?.map((node) => {
     const nodeType = node.type === "waypoint" ? "default" : node.type;
     return {
       id: Number(node.id),
@@ -54,9 +50,17 @@ export const updateWorkflowNodes = async (
     };
   });
 
+  const updatedEdges = edges?.map((edge) => ({
+    id: Number(edge.id),
+    label: edge.label,
+    source: Number(edge.source),
+    target: Number(edge.target),
+  }));
+
   const updatedData = {
     ...currentData.data,
-    nodes: updatedNodes,
+    edges: updatedEdges?.length ? updatedEdges : currentData.data.edges,
+    nodes: updatedNodes?.length ? updatedNodes : currentData.data.nodes,
   };
 
   return supabase
@@ -65,7 +69,6 @@ export const updateWorkflowNodes = async (
     .eq("id", workflowId);
 };
 
-// Helper function to convert snake_case to camelCase
 function snakeToCamel(str: string): string {
   return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 }

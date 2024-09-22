@@ -54,6 +54,7 @@ const WorkflowContext = createContext<{
   onNodesChange: OnNodesChange<ReactFlowNode>;
   onEdgesChange: OnEdgesChange<ReactFlowEdge>;
   addNewUserData: () => void;
+  setEdgeChanged: React.Dispatch<React.SetStateAction<boolean>>;
 }>({
   currentWorkflow: null,
   currentNode: null,
@@ -67,6 +68,7 @@ const WorkflowContext = createContext<{
   updateNodeProperty: () => () => {},
   updateUserDataProp: () => () => {},
   addNewUserData: () => {},
+  setEdgeChanged: () => {},
 });
 
 export default function WorkflowProvider({
@@ -216,26 +218,15 @@ export default function WorkflowProvider({
     });
   }, [currentNode, edges, setNodes]);
 
-  const onNodesChangeFlagged = useCallback(
-    (newNodes: NodeChange<ReactFlowNode>[]) => {
-      onNodesChange(newNodes);
-      if (
-        !currentWorkflow ||
-        newNodes.length === currentWorkflow.data.nodes.length
-      )
-        return;
-      setNodeChanged(true);
-    },
-    [onNodesChange, currentWorkflow]
-  );
-
-  const onEdgesChangeFlagged = useCallback(
-    (newEdges: EdgeChange<ReactFlowEdge>[]) => {
-      setEdgeChanged(true);
-      onEdgesChange(newEdges);
-    },
-    [onEdgesChange]
-  );
+  const onNodesChangeFlagged = (newNodes: NodeChange<ReactFlowNode>[]) => {
+    onNodesChange(newNodes);
+    if (
+      !currentWorkflow ||
+      newNodes.length === currentWorkflow.data.nodes.length
+    )
+      return;
+    setNodeChanged(true);
+  };
 
   const debouncedSave = useCallback(
     debounce(async () => {
@@ -243,46 +234,54 @@ export default function WorkflowProvider({
         Object.values(node).some((value) => !value)
       );
 
-      if (isSomeNodeInvalid || !currentWorkflow) return;
+      const isSomeEdgeInvalid = edges.some((edge) =>
+        Object.entries(edge).some(([key, value]) => key !== "label" && !value)
+      );
+
+      if (isSomeNodeInvalid || isSomeEdgeInvalid || !currentWorkflow) return;
 
       setIsSaving(true);
       toast({ description: "Saving workflow..." });
 
       try {
-        const saved = await updateWorkflowNodes(currentWorkflow.id, nodes);
+        const saved = await updateWorkflowNodes(
+          currentWorkflow.id,
+          nodes,
+          edges
+        );
 
         if (saved?.error) throw new Error(saved.error.message);
 
         setNodeChanged(false);
+        setEdgeChanged(false);
         toast({ description: "Workflow saved successfully" });
-      } catch (error) {
+      } catch {
         toast({
-          description:
-            error instanceof Error ? error.message : "Failed to save workflow",
+          description: "An error occurred while saving the workflow",
           variant: "destructive",
         });
       } finally {
         setIsSaving(false);
       }
-    }, 1000),
-    [nodes, currentWorkflow, toast]
+    }, 500),
+    [nodes, edges, currentWorkflow, toast]
   );
 
   useEffect(() => {
-    if (nodeChanged && nodes.length && !isSaving) {
-      debouncedSave();
-    }
+    const nodesChanges = nodeChanged && nodes.length;
+    const nodeOrEdgeChanged = nodesChanges || edgeChanged;
+
+    if (nodeOrEdgeChanged && !isSaving) debouncedSave();
 
     return () => {
       debouncedSave.cancel();
     };
-  }, [nodes, nodeChanged, isSaving]);
+  }, [nodes, edges, nodeChanged, isSaving]);
 
-  useEffect(() => {
-    if (edgeChanged && edges.length) {
-      console.log("Edges changed");
-    }
-  }, [edges]);
+  const onEdgesChangeFlagged = (newEdges: EdgeChange<ReactFlowEdge>[]) => {
+    onEdgesChange(newEdges);
+    setEdgeChanged(true);
+  };
 
   return (
     <WorkflowContext.Provider
@@ -294,6 +293,7 @@ export default function WorkflowProvider({
         setNodes,
         onNodesChange: onNodesChangeFlagged,
         onEdgesChange: onEdgesChangeFlagged,
+        setEdgeChanged,
         setEdges,
         onSetCurrentNode,
         updateNodeProperty,
