@@ -1,13 +1,21 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import {
   Edge,
+  EdgeChange,
+  NodeChange,
   OnEdgesChange,
   OnNodesChange,
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
 
-import { getWorkflows } from "@/services/workflows/subpabse";
+import {
+  getWorkflows,
+  updateWorkflowNodes,
+} from "@/services/workflows/subpabse";
+import debounce from "lodash/debounce";
 
+import { useToast } from "@/hooks/use-toast";
 import { formatName } from "@/lib/formatSnake";
 import {
   FlowWorkflow,
@@ -16,7 +24,13 @@ import {
 } from "@/services/workflows/types";
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 const WorkflowContext = createContext<{
   currentWorkflow: FlowWorkflow | null;
@@ -26,7 +40,6 @@ const WorkflowContext = createContext<{
   setNodes: React.Dispatch<React.SetStateAction<ReactFlowNode[]>>;
   setEdges: React.Dispatch<React.SetStateAction<ReactFlowEdge[]>>;
   onSetCurrentNode: (nodeId: string | null) => void;
-  handleNewNode: (node: ReactFlowNode) => void;
   updateUserDataProp: <
     T extends keyof NonNullable<ReactFlowNode["userData"]>[number]
   >(
@@ -51,7 +64,6 @@ const WorkflowContext = createContext<{
   onNodesChange: () => {},
   onEdgesChange: () => {},
   onSetCurrentNode: () => {},
-  handleNewNode: () => {},
   updateNodeProperty: () => () => {},
   updateUserDataProp: () => () => {},
   addNewUserData: () => {},
@@ -69,6 +81,11 @@ export default function WorkflowProvider({
   );
 
   const [currentNode, setCurrentNode] = useState<ReactFlowNode | null>(null);
+  const [nodeChanged, setNodeChanged] = useState(false);
+  const [edgeChanged, setEdgeChanged] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { toast } = useToast();
 
   useEffect(() => {
     async function load() {
@@ -76,19 +93,11 @@ export default function WorkflowProvider({
       const currenWorkflow = res[0];
       if (!currenWorkflow) return;
 
-      setCurrentWorkflow({
-        id: currenWorkflow.id,
-        generalInstructions: currenWorkflow.data.generalInstructions,
-      });
-
       const currentNodes = currenWorkflow.data.nodes.map(
         (node, index: number) => {
-          const type =
-            index === 0
-              ? "start_call"
-              : node.nodeType === "default"
-              ? "waypoint"
-              : node.nodeType;
+          const defaultType =
+            node.nodeType === "default" ? "waypoint" : node.nodeType;
+          const type = index === 0 ? "start_call" : defaultType;
 
           return {
             ...node,
@@ -114,23 +123,28 @@ export default function WorkflowProvider({
         currentEdges
       );
 
+      setCurrentWorkflow({
+        id: currenWorkflow.id,
+        generalInstructions: currenWorkflow.data.generalInstructions,
+        data: {
+          nodes: layoutedNodes,
+          edges: currentEdges,
+        },
+      });
+
       setNodes(layoutedNodes);
       setEdges(currentEdges);
     }
     load();
   }, [setNodes, setEdges]);
 
-  const onSetCurrentNode = (nodeId: string | null) => {
-    const node = nodes.find((node) => node.id === nodeId);
-    setCurrentNode(node || null);
-  };
-
-  const handleNewNode = (node: ReactFlowNode) => {
-    setNodes((nodes) => {
-      const newNodes = [...nodes, node];
-      return layoutNodesWithDagre(newNodes, edges);
-    });
-  };
+  const onSetCurrentNode = useCallback(
+    (nodeId: string | null) => {
+      const node = nodes.find((node) => node.id === nodeId);
+      setCurrentNode(node || null);
+    },
+    [nodes]
+  );
 
   const updateUserDataProp =
     <T extends keyof NonNullable<ReactFlowNode["userData"]>[number]>(
@@ -158,8 +172,10 @@ export default function WorkflowProvider({
           };
         });
 
-        return layoutNodesWithDagre(newNodes, edges);
+        return newNodes;
       });
+
+      setNodeChanged(true);
     };
 
   const updateNodeProperty =
@@ -175,11 +191,13 @@ export default function WorkflowProvider({
           };
         });
 
-        return layoutNodesWithDagre(newNodes, edges);
+        return newNodes;
       });
+
+      setNodeChanged(true);
     };
 
-  const addNewUserData = () => {
+  const addNewUserData = useCallback(() => {
     setNodes((nodes) => {
       const newNodes = nodes.map((node) => {
         if (node.id !== currentNode?.id) return node;
@@ -196,7 +214,75 @@ export default function WorkflowProvider({
 
       return layoutNodesWithDagre(newNodes, edges);
     });
-  };
+  }, [currentNode, edges, setNodes]);
+
+  const onNodesChangeFlagged = useCallback(
+    (newNodes: NodeChange<ReactFlowNode>[]) => {
+      onNodesChange(newNodes);
+      if (
+        !currentWorkflow ||
+        newNodes.length === currentWorkflow.data.nodes.length
+      )
+        return;
+      setNodeChanged(true);
+    },
+    [onNodesChange, currentWorkflow]
+  );
+
+  const onEdgesChangeFlagged = useCallback(
+    (newEdges: EdgeChange<ReactFlowEdge>[]) => {
+      setEdgeChanged(true);
+      onEdgesChange(newEdges);
+    },
+    [onEdgesChange]
+  );
+
+  const debouncedSave = useCallback(
+    debounce(async () => {
+      const isSomeNodeInvalid = nodes.some((node) =>
+        Object.values(node).some((value) => !value)
+      );
+
+      if (isSomeNodeInvalid || !currentWorkflow) return;
+
+      setIsSaving(true);
+      toast({ description: "Saving workflow..." });
+
+      try {
+        const saved = await updateWorkflowNodes(currentWorkflow.id, nodes);
+
+        if (saved?.error) throw new Error(saved.error.message);
+
+        setNodeChanged(false);
+        toast({ description: "Workflow saved successfully" });
+      } catch (error) {
+        toast({
+          description:
+            error instanceof Error ? error.message : "Failed to save workflow",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    }, 1000),
+    [nodes, currentWorkflow, toast]
+  );
+
+  useEffect(() => {
+    if (nodeChanged && nodes.length && !isSaving) {
+      debouncedSave();
+    }
+
+    return () => {
+      debouncedSave.cancel();
+    };
+  }, [nodes, nodeChanged, isSaving]);
+
+  useEffect(() => {
+    if (edgeChanged && edges.length) {
+      console.log("Edges changed");
+    }
+  }, [edges]);
 
   return (
     <WorkflowContext.Provider
@@ -206,11 +292,10 @@ export default function WorkflowProvider({
         nodes,
         edges,
         setNodes,
-        onNodesChange,
-        onEdgesChange,
+        onNodesChange: onNodesChangeFlagged,
+        onEdgesChange: onEdgesChangeFlagged,
         setEdges,
         onSetCurrentNode,
-        handleNewNode,
         updateNodeProperty,
         updateUserDataProp,
         addNewUserData,

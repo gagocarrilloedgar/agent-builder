@@ -79,4 +79,8 @@ export interface ReactFlowEdge {
 export interface FlowWorkflow {
   id: number;
   generalInstructions: string;
+  data: {
+    nodes: ReactFlowNode[];
+    edges: ReactFlowEdge[];
+  };
 }

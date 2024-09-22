@@ -222,11 +222,11 @@ export function Layout({ children }: PropsWithChildren) {
                 </p>
               </section>
               <section className="flex flex-col gap-2">
-                {currentNode?.userData?.map((value, index) => (
-                  <InputWrapper key={index.toString()}>
-                    <Label id={`${index}-${value}`}>{value.description}</Label>
+                {currentNode?.userData?.map(({ name, description }, index) => (
+                  <InputWrapper key={name.toString()}>
+                    <Label id={`${index}-${name}`}>{description}</Label>
                     <Input
-                      value={value.name}
+                      value={name}
                       onChange={(e) =>
                         updateUserDataProp(
                           currentNode.id,
@@ -235,7 +235,7 @@ export function Layout({ children }: PropsWithChildren) {
                         )(e.target.value)
                       }
                       type="text"
-                      id={`${index}-${value}`}
+                      id={`${index}-${name}`}
                     />
                   </InputWrapper>
                 ))}

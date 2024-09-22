@@ -36,7 +36,6 @@ export function BuilderComponent() {
     setEdges,
     onEdgesChange,
     onSetCurrentNode,
-    handleNewNode: addNode,
   } = useCurrentWorkflow();
 
   const [open, setOpen] = useState(false);
@@ -66,19 +65,24 @@ export function BuilderComponent() {
         y: event.clientY,
       });
 
-      const id = Number(nodes[nodes.length - 1]?.id) + 1 || 0;
+      setNodes((nds) => {
+        const id = Number(nds[nds.length - 1]?.id) + 1 || 0;
 
-      const newNode = {
-        id: id.toString(),
-        type: dndNodeType,
-        position,
-        data: { label: `${dndNodeType} node` },
-      };
+        const newNode = {
+          id: id.toString(),
+          type: dndNodeType,
+          nodeName: undefined,
+          prompt: undefined,
+          selected: true,
+          nodeEnterCondition: undefined,
+          userData: [],
+          position,
+          data: { label: `${dndNodeType} node` },
+        };
 
-      setNodes((nds) => nds.concat(newNode));
-      addNode(newNode);
+        return nds.concat(newNode);
+      });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [screenToFlowPosition, dndNodeType, setNodes]
   );
 
@@ -99,6 +103,10 @@ export function BuilderComponent() {
       const id = Number(nodes[nodes.length - 1]?.id) + 1 || 0;
       const newNode = {
         id: id.toString(),
+        nodeName: undefined,
+        prompt: undefined,
+        nodeEnterCondition: undefined,
+        userData: [],
         position: screenToFlowPosition({
           x: onEndPosition.x,
           y: onEndPosition.y,
@@ -131,8 +139,8 @@ export function BuilderComponent() {
       setOnEndConntectionState(null);
       setOnEndPosition(null);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
+      nodes,
       onEndConntectionState,
       screenToFlowPosition,
       setEdges,
