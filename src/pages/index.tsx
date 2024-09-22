@@ -161,11 +161,11 @@ export function Layout({ children }: PropsWithChildren) {
         )}
         {currentNode && (
           <div className="flex flex-col w-full h-full border-l py-2 px-4 gap-4">
-            <p>{currentNode?.node_name}</p>
+            <p>{currentNode?.nodeName}</p>
             <InputWrapper>
               <Label htmlFor="name">Node name</Label>
               <Input
-                value={currentNode?.node_name}
+                value={currentNode?.nodeName}
                 type="text"
                 id="node_name"
                 placeholder="Enter node name"
@@ -174,7 +174,7 @@ export function Layout({ children }: PropsWithChildren) {
             <InputWrapper>
               <Label htmlFor="email">Condition to start</Label>
               <Input
-                value={currentNode?.node_enter_condition}
+                value={currentNode?.nodeEnterCondition}
                 type="text"
                 id="condition"
                 placeholder="Enter condition"
@@ -194,7 +194,7 @@ export function Layout({ children }: PropsWithChildren) {
             <p className="text-sm ">
               Please define the user data that should be collected at this node
             </p>
-            {currentNode?.user_data?.map((value, index) => (
+            {currentNode?.userData?.map((value, index) => (
               <InputWrapper key={index.toString()}>
                 <Label id={`${index}-${value}`}>{value.description}</Label>
                 <Input

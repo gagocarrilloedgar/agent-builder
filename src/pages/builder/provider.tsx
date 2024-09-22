@@ -2,28 +2,22 @@ import { Edge } from "@xyflow/react";
 
 import { getWorkflows } from "@/services/workflows/subpabse";
 
-import { BuilderNode, Node, Workflow } from "@/services/workflows/types";
+import { formatName } from "@/lib/formatSnake";
+import { FlowWorkflow, ReactFlowNode } from "@/services/workflows/types";
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import { createContext, useContext, useEffect, useState } from "react";
 
-export type WorkflowType = {
-  id: number;
-  generalInstructions: string;
-  nodes: BuilderNode[];
-  edges: Edge[];
-};
-
 const WorkflowContext = createContext<{
-  currentWorkflow: WorkflowType | null;
-  rawWorkflow: Workflow | null;
-  currentNode: Node | null;
+  currentWorkflow: FlowWorkflow | null;
+  currentNode: ReactFlowNode | null;
   onSetCurrentNode: (nodeId: string | null) => void;
+  handleNewNode: (node: ReactFlowNode) => void;
 }>({
   currentWorkflow: null,
-  rawWorkflow: null,
   currentNode: null,
   onSetCurrentNode: () => {},
+  handleNewNode: () => {},
 });
 
 export default function WorkflowProvider({
@@ -31,30 +25,30 @@ export default function WorkflowProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [currentWorkflow, setCurrentWorkflow] = useState<WorkflowType | null>(
+  const [currentWorkflow, setCurrentWorkflow] = useState<FlowWorkflow | null>(
     null
   );
-  const [currentNode, setCurrentNode] = useState<Node | null>(null);
 
-  const [rawWorkflow, setRawWorkflow] = useState<Workflow | null>(null);
+  const [currentNode, setCurrentNode] = useState<ReactFlowNode | null>(null);
 
   useEffect(() => {
     async function load() {
       const res = await getWorkflows();
       const currenWorkflow = res[0];
       if (!currenWorkflow) return;
-      setRawWorkflow(currenWorkflow);
 
-      const currentNodes: BuilderNode[] = currenWorkflow.data.nodes.map(
+      const currentNodes = currenWorkflow.data.nodes.map(
         (node, index: number) => {
           const type =
             index === 0
               ? "start_call"
-              : node.node_type === "default"
+              : node.nodeType === "default"
               ? "waypoint"
-              : node.node_type;
+              : node.nodeType;
 
           return {
+            ...node,
+            nodeName: formatName(node.nodeName),
             id: node.id.toString(),
             position: { x: 0, y: 0 },
             data: { label: node.prompt },
@@ -64,34 +58,56 @@ export default function WorkflowProvider({
       );
 
       const currentEdges = currenWorkflow.data.edges.map((edge) => ({
+        ...edge,
         id: edge.id.toString(),
         source: edge.source.toString(),
         target: edge.target.toString(),
         animated: true,
       }));
 
-      const layoutedNodes = layoutNodesWithDagre(currentNodes, currentEdges);
+      const layoutedNodes: ReactFlowNode[] = layoutNodesWithDagre(
+        currentNodes,
+        currentEdges
+      );
 
       setCurrentWorkflow({
         id: currenWorkflow.id,
-        generalInstructions: currenWorkflow.data.general_instructions,
-        nodes: layoutedNodes,
-        edges: currentEdges,
+        data: {
+          generalInstructions: currenWorkflow.data.generalInstructions,
+          nodes: layoutedNodes,
+          edges: currentEdges,
+        },
       });
     }
     load();
   }, []);
 
   const onSetCurrentNode = (nodeId: string | null) => {
-    const node = rawWorkflow?.data.nodes.find(
-      (n) => n.id.toString() === nodeId
-    );
+    const node = currentWorkflow?.data.nodes.find((node) => node.id === nodeId);
     setCurrentNode(node || null);
+  };
+
+  const handleNewNode = (node: ReactFlowNode) => {
+    setCurrentWorkflow((workflow) => {
+      if (!workflow) return null;
+
+      const newNodes = [...workflow.data.nodes, node];
+      const newEdges = [...workflow.data.edges];
+
+      return {
+        ...workflow,
+        data: {
+          ...workflow.data,
+          nodes: newNodes,
+          edges: newEdges,
+        },
+      };
+    });
   };
 
   return (
     <WorkflowContext.Provider
-      value={{ currentWorkflow, rawWorkflow, currentNode, onSetCurrentNode }}
+      value={{ currentWorkflow, currentNode, onSetCurrentNode, handleNewNode }}
     >
       {children}
     </WorkflowContext.Provider>
@@ -101,7 +117,7 @@ export default function WorkflowProvider({
 const NODE_WIDTH = 250;
 const NODE_HEIGHT = 150;
 
-const layoutNodesWithDagre = (nodes: BuilderNode[], edges: Edge[]) => {
+const layoutNodesWithDagre = (nodes: ReactFlowNode[], edges: Edge[]) => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
@@ -129,6 +145,7 @@ const layoutNodesWithDagre = (nodes: BuilderNode[], edges: Edge[]) => {
   return nodes.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
     return {
+      ...node,
       id: node.id,
       type: node.type,
       data: {

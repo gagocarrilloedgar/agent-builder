@@ -12,41 +12,74 @@ export const publicNodeTypes = nodeTypes.filter((type) => type !== "default");
 
 // nodeTypesArray will be a tuple with these string literals
 export type NodeNodeTypes = (typeof nodeTypes)[number];
+export type PublicNodeTypes = (typeof publicNodeTypes)[number];
 
-export type UserDataType = "string" | "integer" | "boolean" | "float";
+export const userDataType = <const>["string", "integer", "boolean", "float"];
 
-export interface Node {
+export type UserDataType = (typeof userDataType)[number];
+
+export interface UINode {
   id: number;
-  node_type: NodeNodeTypes;
-  node_name: string;
+  nodeType: NodeNodeTypes;
+  nodeName: string;
   prompt: string;
-  node_enter_condition?: string;
-  user_data?: {
+  nodeEnterCondition: string;
+  userData: {
     name: string;
-    data_type: UserDataType;
+    dataType: UserDataType;
     description: string;
   }[];
 }
 
-export interface BuilderNode {
-  id: string;
-  position: { x: number; y: number };
-  type: NodeNodeTypes;
-  data: { label: string };
-}
-
-export interface Edge {
+export interface UIEdge {
   id: number;
   source: number;
-  label: string | null;
   target: number;
+  label: string | null;
 }
 
-export interface Workflow {
+export interface UIWorkflow {
   id: number;
   data: {
-    general_instructions: string;
-    nodes: Node[];
-    edges: Edge[];
+    generalInstructions: string;
+    nodes: UINode[];
+    edges: UIEdge[];
+  };
+}
+
+export interface ReactFlowNode {
+  id: string;
+  type: NodeNodeTypes;
+  nodeName?: string;
+  prompt?: string;
+  nodeEnterCondition?: string;
+  position: {
+    x: number;
+    y: number;
+  };
+  data: {
+    label: string;
+  };
+  userData?: {
+    name: string;
+    dataType: UserDataType;
+    description: string;
+  }[];
+}
+
+export interface ReactFlowEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string | null;
+  animated: boolean;
+}
+
+export interface FlowWorkflow {
+  id: number;
+  data: {
+    generalInstructions: string;
+    nodes: ReactFlowNode[];
+    edges: ReactFlowEdge[];
   };
 }

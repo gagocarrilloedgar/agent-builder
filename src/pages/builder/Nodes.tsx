@@ -62,9 +62,11 @@ function BaseNodeComponent({
   selected,
   data,
   id,
+  ...props
 }: BaseNodeProps) {
   const description = data.label?.toString();
-  const { onSetCurrentNode, rawWorkflow } = useCurrentWorkflow();
+  const { onSetCurrentNode, currentWorkflow } = useCurrentWorkflow();
+  console.log(props);
 
   useEffect(() => {
     if (selected && id) {
@@ -74,9 +76,9 @@ function BaseNodeComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, id]);
 
-  const title = rawWorkflow?.data.nodes.find(
-    (node) => node.id === Number(id)
-  )?.node_name;
+  const title = currentWorkflow?.data.nodes.find(
+    (node) => node.id === id
+  )?.nodeName;
 
   return (
     <Card className={cn("relative", selected && "border-primary")}>

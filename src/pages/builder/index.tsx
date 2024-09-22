@@ -20,23 +20,27 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDnD } from "@/DnDProvider";
-import { NodeNodeTypes } from "@/services/workflows/types";
+import { FlowWorkflow, NodeNodeTypes } from "@/services/workflows/types";
 import "@xyflow/react/dist/style.css";
 import { PhoneOff, Waypoints } from "lucide-react";
 import { DragEvent, useCallback, useEffect, useState } from "react";
 import { EndCallNode, StartCallNode, WaypointNode } from "./Nodes";
-import { useCurrentWorkflow, WorkflowType } from "./provider";
+import { useCurrentWorkflow } from "./provider";
 
 // Constants for spacing
 
 export function BuilderComponent({
   currentWorkflow,
 }: {
-  currentWorkflow: WorkflowType;
+  currentWorkflow: FlowWorkflow;
 }) {
-  const { onSetCurrentNode } = useCurrentWorkflow();
-  const [nodes, setNodes, onNodesChange] = useNodesState(currentWorkflow.nodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(currentWorkflow.edges);
+  const { onSetCurrentNode, handleNewNode: addNode } = useCurrentWorkflow();
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    currentWorkflow.data.nodes
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    currentWorkflow.data.edges
+  );
   const [open, setOpen] = useState(false);
   const [onEndConntectionState, setOnEndConntectionState] =
     useState<FinalConnectionState | null>(null);
@@ -74,7 +78,9 @@ export function BuilderComponent({
       };
 
       setNodes((nds) => nds.concat(newNode));
+      addNode(newNode);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [screenToFlowPosition, dndNodeType, setNodes]
   );
 
@@ -127,6 +133,7 @@ export function BuilderComponent({
       setOnEndConntectionState(null);
       setOnEndPosition(null);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       onEndConntectionState,
       screenToFlowPosition,
