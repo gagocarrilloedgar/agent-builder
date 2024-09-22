@@ -3,8 +3,6 @@ import {
   Edge,
   EdgeChange,
   NodeChange,
-  OnEdgesChange,
-  OnNodesChange,
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
@@ -23,52 +21,8 @@ import { formatName } from "@/shared/lib/formatSnake";
 import { getWorkflows, updateWorkflow } from "@/modules/workflows/application";
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-
-const WorkflowContext = createContext<{
-  currentWorkflow: FlowWorkflow | null;
-  currentNode: ReactFlowNode | null;
-  edges: ReactFlowEdge[];
-  nodes: ReactFlowNode[];
-  setNodes: React.Dispatch<React.SetStateAction<ReactFlowNode[]>>;
-  setEdges: React.Dispatch<React.SetStateAction<ReactFlowEdge[]>>;
-  onSetCurrentNode: (nodeId: string | null) => void;
-  updateUserDataProp: <
-    T extends keyof NonNullable<ReactFlowNode["userData"]>[number]
-  >(
-    nodeId: string,
-    property: T,
-    index: number
-  ) => (value: NonNullable<ReactFlowNode["userData"]>[number][T]) => void;
-  updateNodeProperty: <K extends keyof ReactFlowNode>(
-    nodeId: string,
-    property: K
-  ) => (value: ReactFlowNode[K]) => void;
-  onNodesChange: OnNodesChange<ReactFlowNode>;
-  onEdgesChange: OnEdgesChange<ReactFlowEdge>;
-  addNewUserData: () => void;
-  setEdgeChanged: React.Dispatch<React.SetStateAction<boolean>>;
-}>({
-  currentWorkflow: null,
-  currentNode: null,
-  edges: [],
-  nodes: [],
-  setNodes: () => {},
-  setEdges: () => {},
-  onNodesChange: () => {},
-  onEdgesChange: () => {},
-  onSetCurrentNode: () => {},
-  updateNodeProperty: () => () => {},
-  updateUserDataProp: () => () => {},
-  addNewUserData: () => {},
-  setEdgeChanged: () => {},
-});
+import { useCallback, useEffect, useState } from "react";
+import { WorkflowContext } from "./WorkflowContext";
 
 export default function WorkflowProvider({
   children,
@@ -225,7 +179,9 @@ export default function WorkflowProvider({
   const debouncedSave = useCallback(
     debounce(async () => {
       const isSomeNodeInvalid = nodes.some((node) =>
-        Object.values(node).some((value) => !value)
+        Object.entries(node).some(
+          ([key, value]) => !value && key !== "selected"
+        )
       );
 
       const isSomeEdgeInvalid = edges.some((edge) =>
@@ -343,16 +299,4 @@ const layoutNodesWithDagre = (nodes: ReactFlowNode[], edges: Edge[]) => {
       },
     };
   });
-};
-
-export const useCurrentWorkflow = () => {
-  const context = useContext(WorkflowContext);
-
-  if (!context) {
-    throw new Error(
-      "useCurrentWorkflow must be used within a WorkflowProvider"
-    );
-  }
-
-  return context;
 };

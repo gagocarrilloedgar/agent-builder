@@ -22,8 +22,9 @@ import { useDnD } from "@/pages/Builder/DnDProvider";
 import "@xyflow/react/dist/style.css";
 import { PhoneOff, Waypoints } from "lucide-react";
 import { DragEvent, useCallback, useEffect, useState } from "react";
+import { NodeEditor } from "./NodeEditor";
 import { EndCallNode, StartCallNode, WaypointNode } from "./Nodes";
-import { useCurrentWorkflow } from "./WorkflowProvider";
+import { useCurrentWorkflow } from "./useCurrentWorkflow";
 
 // Constants for spacing
 
@@ -35,6 +36,7 @@ export function BuilderComponent() {
     edges,
     setEdges,
     onEdgesChange,
+    currentNode,
     onSetCurrentNode,
     setEdgeChanged,
   } = useCurrentWorkflow();
@@ -192,6 +194,43 @@ export function BuilderComponent() {
     onSetCurrentNode(null);
   }, [onSetCurrentNode]);
 
+  const handlePaste = useCallback(() => {
+    if (!currentNode) return;
+
+    setNodes((nds) => {
+      const id = Number(nds[nds.length - 1]?.id) + 1 || 0;
+      const newNodes = {
+        ...currentNode,
+        id: id.toString(),
+        selected: false,
+        position: {
+          x: currentNode.position.x + 150,
+          y: currentNode.position.y + 150,
+        },
+      };
+
+      return nds.concat(newNodes);
+    });
+  }, [setNodes, currentNode]);
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (
+        // Fix this key code for an approach that is not based on key codes
+        (event.metaKey || event.ctrlKey || event.keyCode === 91) &&
+        event.key === "v"
+      ) {
+        handlePaste();
+      }
+    }  );
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -240,7 +279,7 @@ export function BuilderComponent() {
   );
 }
 
-export default function Builder() {
+function Builder() {
   const { nodes } = useCurrentWorkflow();
 
   if (!nodes)
@@ -252,3 +291,18 @@ export default function Builder() {
 
   return <BuilderComponent />;
 }
+
+const WorkflowBuilder = () => {
+  return (
+    <>
+      <div className="flex-grow h-screen flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-auto">
+          <Builder />
+        </main>
+      </div>
+      <NodeEditor />
+    </>
+  );
+};
+
+export default WorkflowBuilder;

@@ -5,43 +5,9 @@ import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/shared/lib/utils";
 import { Tooltip } from "@radix-ui/react-tooltip";
 import { Handle, NodeProps, Position } from "@xyflow/react";
-import {
-  AlertCircle,
-  EllipsisVertical,
-  Phone,
-  PhoneOff,
-  Waypoints,
-} from "lucide-react";
+import { AlertCircle, EllipsisVertical } from "lucide-react";
 import { ComponentPropsWithoutRef, memo, useEffect } from "react";
-import { useCurrentWorkflow } from "./WorkflowProvider";
-
-function StartCallComponent(props: NodeProps) {
-  return (
-    <BaseNode isStart label="Start call" className="bg-emerald-500" {...props}>
-      <Phone size="18" color="white" />
-    </BaseNode>
-  );
-}
-
-function WaypointComponent(props: NodeProps) {
-  return (
-    <BaseNode className="bg-purple-600" label="Action" {...props}>
-      <Waypoints size="18" color="white" />
-    </BaseNode>
-  );
-}
-
-function EndCallComponent(props: NodeProps) {
-  return (
-    <BaseNode isEnd className="bg-rose-600" label={"End call"} {...props}>
-      <PhoneOff size="18" color="white" />
-    </BaseNode>
-  );
-}
-
-export const EndCallNode = memo(EndCallComponent);
-export const StartCallNode = memo(StartCallComponent);
-export const WaypointNode = memo(WaypointComponent);
+import { useCurrentWorkflow } from "../useCurrentWorkflow";
 
 type BaseNodeProps = NodeProps &
   ComponentPropsWithoutRef<"div"> & {
@@ -49,8 +15,6 @@ type BaseNodeProps = NodeProps &
     isStart?: boolean;
     isEnd?: boolean;
   };
-
-const BaseNode = memo(BaseNodeComponent);
 
 function BaseNodeComponent({
   children,
@@ -142,3 +106,5 @@ function BaseNodeComponent({
     </Card>
   );
 }
+
+export const BaseNode = memo(BaseNodeComponent);
