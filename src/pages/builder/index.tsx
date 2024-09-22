@@ -232,7 +232,7 @@ export function BuilderComponent() {
         onConnect={onConnect}
       >
         <MiniMap />
-        <Background variant={BackgroundVariant.Dots} gap={20} />
+        <Background variant={BackgroundVariant.Dots} gap={15} />
       </ReactFlow>
     </>
   );

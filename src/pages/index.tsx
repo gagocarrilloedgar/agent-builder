@@ -1,6 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -9,17 +16,22 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDnD } from "@/DnDProvider";
-import { NodeNodeTypes, publicNodeTypes } from "@/services/workflows/types";
+import { capitalize } from "@/lib/capitalize";
 import {
-  Book,
-  Bot,
-  Code2,
+  NodeNodeTypes,
+  publicNodeTypes,
+  UserDataType,
+  userDataType,
+} from "@/services/workflows/types";
+import {
+  FoldHorizontal,
   List,
-  Settings,
+  SquareMousePointer,
   SquareUser,
+  UnfoldHorizontal,
   Workflow,
 } from "lucide-react";
-import { DragEvent, PropsWithChildren } from "react";
+import { DragEvent, PropsWithChildren, useState } from "react";
 import { useCurrentWorkflow } from "./builder/provider";
 
 export function Layout({ children }: PropsWithChildren) {
@@ -44,6 +56,8 @@ export function Layout({ children }: PropsWithChildren) {
     }
   };
 
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <div className="flex h-screen w-screen">
       <aside className="w-16 flex-shrink-0 flex flex-col border-r bg-white p-4">
@@ -61,7 +75,7 @@ export function Layout({ children }: PropsWithChildren) {
                 className="rounded-lg bg-muted"
                 aria-label="Playground"
               >
-                <List className="h-5 w-5" />
+                <SquareMousePointer className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={5}>
@@ -76,56 +90,11 @@ export function Layout({ children }: PropsWithChildren) {
                 className="rounded-lg"
                 aria-label="Models"
               >
-                <Bot className="h-5 w-5" />
+                <List className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={5}>
-              Models
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-lg"
-                aria-label="API"
-              >
-                <Code2 className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5}>
-              API
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-lg"
-                aria-label="Documentation"
-              >
-                <Book className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5}>
-              Documentation
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-lg"
-                aria-label="Settings"
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5}>
-              Settings
+              Workflows list
             </TooltipContent>
           </Tooltip>
         </nav>
@@ -151,17 +120,26 @@ export function Layout({ children }: PropsWithChildren) {
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
 
-      <aside className="w-80 min-w-[16rem] h-screen flex-shrink-0 bg-white">
+      <aside
+        className={`${
+          expanded && currentNode ? "w-2/5" : "w-96"
+        } min-w-[16rem] h-screen p-4 rounded-xl flex-shrink-0 bg-white `}
+      >
         {!currentNode && (
-          <div className="flex flex-col w-full h-full border-l p-4 gap-4">
-            <p className="text-md font-semibold">Add a new node</p>
+          <div className="flex flex-col w-full h-full border rounded-lg p-4 gap-4">
+            <section>
+              <p className="text-md font-semibold">Add a new node</p>
+            </section>
+            <p className="text-sm">
+              Drag a node type from the list below to add it to the workflow
+            </p>
+            <Separator />
             {publicNodeTypes.map((type) => (
               <Button
                 onDragStart={(event) => onDragStart(type, event)}
                 key={type}
                 variant="outline"
                 draggable
-                className="flex items-center gap-2"
               >
                 {type.replace("_", " ").toUpperCase()}
               </Button>
@@ -169,8 +147,29 @@ export function Layout({ children }: PropsWithChildren) {
           </div>
         )}
         {currentNode && (
-          <div className="flex flex-col w-full h-full border-l py-2 px-4 gap-4">
-            <p>{nodes.find((node) => node.id === currentNode.id)?.nodeName}</p>
+          <div className="flex flex-col w-full h-full border rounded-lg py-2 px-4 gap-4">
+            <p>
+              {nodes.find((node) => node.id === currentNode.id)?.nodeName}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setExpanded((prev) => !prev)}
+                    size="icon"
+                    variant="outline"
+                    className="float-right"
+                  >
+                    {expanded ? (
+                      <FoldHorizontal className="h-4 w-4" />
+                    ) : (
+                      <UnfoldHorizontal className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={5}>
+                  {expanded ? "Collapse" : "Expand"} edit
+                </TooltipContent>
+              </Tooltip>
+            </p>
             <InputWrapper>
               <Label htmlFor="name">Node name</Label>
               <Input
@@ -213,7 +212,7 @@ export function Layout({ children }: PropsWithChildren) {
               />
             </InputWrapper>
             <Separator />
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 overflow-auto">
               <section>
                 <p className="text-md font-semibold">User data</p>
                 <p className="text-sm ">
@@ -221,24 +220,73 @@ export function Layout({ children }: PropsWithChildren) {
                   node
                 </p>
               </section>
-              <section className="flex flex-col gap-2">
-                {currentNode?.userData?.map(({ name, description }, index) => (
-                  <InputWrapper key={`${index}-user-data-wrapper`}>
-                    <Label id={`${index}-user-data-label`}>{description}</Label>
-                    <Input
-                      value={name}
-                      onChange={(e) =>
-                        updateUserDataProp(
-                          currentNode.id,
-                          "name",
-                          index
-                        )(e.target.value)
-                      }
-                      type="text"
-                      id={`${index}-user-data-input`}
-                    />
-                  </InputWrapper>
-                ))}
+              <section className="flex flex-col gap-6">
+                {currentNode?.userData?.map(
+                  ({ name, description, dataType }, index) => (
+                    <section
+                      key={`${index}-user-data-section`}
+                      className="flex flex-col gap-4"
+                    >
+                      <InputWrapper key={`${index}-name-data-wrapper`}>
+                        <Label id={`${index}-name-data-label`}>Name</Label>
+                        <Input
+                          value={name}
+                          onChange={(e) =>
+                            updateUserDataProp(
+                              currentNode.id,
+                              "name",
+                              index
+                            )(e.target.value)
+                          }
+                          type="text"
+                          id={`${index}-name-data-input`}
+                        />
+                      </InputWrapper>
+                      <InputWrapper
+                        key={`${index}-description-user-data-wrapper`}
+                      >
+                        <Label id={`${index}-description-user-data-label`}>
+                          Description of the data property
+                        </Label>
+                        <Input
+                          value={description}
+                          onChange={(e) =>
+                            updateUserDataProp(
+                              currentNode.id,
+                              "description",
+                              index
+                            )(e.target.value)
+                          }
+                          type="text"
+                          id={`${index}-description-data-input`}
+                        />
+                      </InputWrapper>
+                      <Select
+                        value={dataType}
+                        onValueChange={(e) =>
+                          updateUserDataProp(
+                            currentNode.id,
+                            "dataType",
+                            index
+                          )(e as UserDataType)
+                        }
+                        key={`${index}-data-type-select`}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select data type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {userDataType.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {capitalize(type)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Separator />
+                    </section>
+                  )
+                )}
               </section>
               <Button
                 onClick={addNewUserData}
@@ -256,5 +304,5 @@ export function Layout({ children }: PropsWithChildren) {
 }
 
 const InputWrapper = ({ children }: PropsWithChildren) => (
-  <div className="grid w-full max-w-sm items-center gap-1.5">{children}</div>
+  <div className="grid items-center gap-1.5">{children}</div>
 );
