@@ -1,5 +1,5 @@
+import { NodeNodeTypes } from "@/modules/workflows/domain";
 import { createContext, PropsWithChildren, useContext, useState } from "react";
-import { NodeNodeTypes } from "./services/workflows/types";
 
 const DnDContext = createContext<{
   nodeType: NodeNodeTypes;

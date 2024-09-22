@@ -17,13 +17,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useDnD } from "@/DnDProvider";
-import { NodeNodeTypes } from "@/services/workflows/types";
+import { NodeNodeTypes } from "@/modules/workflows/domain";
+import { useDnD } from "@/pages/Builder/DnDProvider";
 import "@xyflow/react/dist/style.css";
 import { PhoneOff, Waypoints } from "lucide-react";
 import { DragEvent, useCallback, useEffect, useState } from "react";
 import { EndCallNode, StartCallNode, WaypointNode } from "./Nodes";
-import { useCurrentWorkflow } from "./provider";
+import { useCurrentWorkflow } from "./WorkflowProvider";
 
 // Constants for spacing
 
@@ -72,6 +72,7 @@ export function BuilderComponent() {
         const newNode = {
           id: id.toString(),
           type: dndNodeType,
+          nodeType: dndNodeType,
           nodeName: undefined,
           prompt: undefined,
           selected: true,
@@ -120,6 +121,7 @@ export function BuilderComponent() {
           y: onEndPosition.y,
         }),
         type,
+        nodeType: type,
         data: { label: `Node ${id}` },
         origin: [0.5, 0.0],
       };

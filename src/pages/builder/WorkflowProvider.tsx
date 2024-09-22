@@ -9,19 +9,18 @@ import {
   useNodesState,
 } from "@xyflow/react";
 
-import {
-  getWorkflows,
-  updateWorkflowNodes,
-} from "@/services/workflows/subpabse";
 import debounce from "lodash/debounce";
 
-import { useToast } from "@/hooks/use-toast";
-import { formatName } from "@/lib/formatSnake";
 import {
   FlowWorkflow,
   ReactFlowEdge,
   ReactFlowNode,
-} from "@/services/workflows/types";
+  WorkflowsRepository,
+} from "@/modules/workflows/domain";
+import { useToast } from "@/shared/hooks/use-toast";
+import { formatName } from "@/shared/lib/formatSnake";
+
+import { getWorkflows, updateWorkflow } from "@/modules/workflows/application";
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import {
@@ -73,9 +72,14 @@ const WorkflowContext = createContext<{
 
 export default function WorkflowProvider({
   children,
+  repository,
 }: {
+  repository: WorkflowsRepository;
   children: React.ReactNode;
 }) {
+  const getFlow = getWorkflows(repository);
+  const updateCurrentWorkflow = updateWorkflow(repository);
+
   const [nodes, setNodes, onNodesChange] = useNodesState<ReactFlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<ReactFlowEdge>([]);
   const [currentWorkflow, setCurrentWorkflow] = useState<FlowWorkflow | null>(
@@ -91,14 +95,13 @@ export default function WorkflowProvider({
 
   useEffect(() => {
     async function load() {
-      const res = await getWorkflows();
+      const res = await getFlow();
       const currenWorkflow = res[0];
       if (!currenWorkflow) return;
 
       const currentNodes = currenWorkflow.data.nodes.map(
         (node, index: number) => {
-          const defaultType =
-            node.nodeType === "default" ? "waypoint" : node.nodeType;
+          const defaultType = node.type === "default" ? "waypoint" : node.type;
           const type = index === 0 ? "start_call" : defaultType;
 
           return {
@@ -106,7 +109,7 @@ export default function WorkflowProvider({
             nodeName: formatName(node.nodeName),
             id: node.id.toString(),
             position: { x: 0, y: 0 },
-            data: { label: node.prompt },
+            data: { label: node.prompt ?? "" },
             type,
           };
         }
@@ -127,8 +130,8 @@ export default function WorkflowProvider({
 
       setCurrentWorkflow({
         id: currenWorkflow.id,
-        generalInstructions: currenWorkflow.data.generalInstructions,
         data: {
+          generalInstructions: currenWorkflow.data.generalInstructions,
           nodes: layoutedNodes,
           edges: currentEdges,
         },
@@ -150,25 +153,25 @@ export default function WorkflowProvider({
 
   const updateUserDataProp = useCallback(
     <T extends keyof NonNullable<ReactFlowNode["userData"]>[number]>(
-      nodeId: string,
-      property: T,
-      index: number
-    ) =>
-    (value: NonNullable<ReactFlowNode["userData"]>[number][T]) => {
-      setNodes((prevNodes) => {
-        return prevNodes.map((node) => {
-          if (node.id !== nodeId) return node;
+        nodeId: string,
+        property: T,
+        index: number
+      ) =>
+      (value: NonNullable<ReactFlowNode["userData"]>[number][T]) => {
+        setNodes((prevNodes) => {
+          return prevNodes.map((node) => {
+            if (node.id !== nodeId) return node;
 
-          const newUserData = node.userData?.map((data, i) => {
-            if (i !== index) return data;
-            return { ...data, [property]: value };
+            const newUserData = node.userData?.map((data, i) => {
+              if (i !== index) return data;
+              return { ...data, [property]: value };
+            });
+
+            return { ...node, userData: newUserData };
           });
-
-          return { ...node, userData: newUserData };
         });
-      });
-      setNodeChanged(true);
-    },
+        setNodeChanged(true);
+      },
     []
   );
   const updateNodeProperty =
@@ -235,16 +238,14 @@ export default function WorkflowProvider({
       toast({ description: "Saving workflow..." });
 
       try {
-        const saved = await updateWorkflowNodes(
+        const saved = await updateCurrentWorkflow(
           currentWorkflow.id,
           nodes,
           edges
         );
 
-        if (saved?.error) throw new Error(saved.error.message);
+        if (saved?.error) throw new Error("An error occurred while saving");
 
-        setNodeChanged(false);
-        setEdgeChanged(false);
         toast({ description: "Workflow saved successfully" });
       } catch {
         toast({
@@ -252,6 +253,8 @@ export default function WorkflowProvider({
           variant: "destructive",
         });
       } finally {
+        setNodeChanged(false);
+        setEdgeChanged(false);
         setIsSaving(false);
       }
     }, 1500),

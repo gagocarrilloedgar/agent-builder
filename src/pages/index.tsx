@@ -15,14 +15,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useDnD } from "@/DnDProvider";
-import { capitalize } from "@/lib/capitalize";
 import {
   NodeNodeTypes,
   publicNodeTypes,
-  UserDataType,
   userDataType,
-} from "@/services/workflows/types";
+  UserDataType,
+} from "@/modules/workflows/domain";
+import { useDnD } from "@/pages/Builder/DnDProvider";
+import { useCurrentWorkflow } from "@/pages/Builder/WorkflowProvider";
+
+import { capitalize } from "@/shared/lib/capitalize";
 import {
   FoldHorizontal,
   List,
@@ -32,7 +34,6 @@ import {
   Workflow,
 } from "lucide-react";
 import { DragEvent, PropsWithChildren, useState } from "react";
-import { useCurrentWorkflow } from "./builder/provider";
 
 export function Layout({ children }: PropsWithChildren) {
   const {

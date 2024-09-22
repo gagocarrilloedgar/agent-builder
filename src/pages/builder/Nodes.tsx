@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import { Tooltip } from "@radix-ui/react-tooltip";
 import { Handle, NodeProps, Position } from "@xyflow/react";
 import {
@@ -13,7 +13,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import { ComponentPropsWithoutRef, memo, useEffect } from "react";
-import { useCurrentWorkflow } from "./provider";
+import { useCurrentWorkflow } from "./WorkflowProvider";
 
 function StartCallComponent(props: NodeProps) {
   return (
