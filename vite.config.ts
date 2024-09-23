@@ -9,11 +9,8 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  build: {
-    emptyOutDir: false,
-  },
   test: {
-    include: ["./tests/**/*.test.{tsx,ts}"],
+    include: ["./tests/**/*.{test,spec}.{tsx,ts}"],
     environment: "jsdom",
     globals: true,
     setupFiles: "./tests/setup.ts",
