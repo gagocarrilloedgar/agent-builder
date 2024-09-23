@@ -18,7 +18,7 @@ Go to the project directory
   cd workflow-builder
 ```
 
-Install dependencies
+Install dependencies 
 
 ```bash
   pnpm install
