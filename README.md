@@ -39,6 +39,13 @@ To run tests, run the following command
   pnpm dev
 ```
 
+## Main technologies
+
+- **TS, React & Vite:** the main app seems a good candidate for a SPA so I'd say vite works just fine and we don't need to overcomplicate with next or remix.
+- **Shadcn:** clean and modular component library based in radix, that  is easy to use and can be easily extended using **Tailwind**. This is a great UI library to build your design system on and have a really solid base.
+- **ReactFlow:** the recommended for this kind of white boarding UX
+- Deployment on **Vercel**
+- **Vitest & React testing library:** for the integration & unit tests. Vitests works nice with vite and it's a bit faster that jest.
 
 ## Some considerations
 
@@ -60,10 +67,11 @@ To run tests, run the following command
 
 ## Improvements
 
-- We could improve error management adding some error boundary class inside the different routes and improve the experience.
+- We could improve error management adding some error boundaries per component so it's more granular.
 - Add more integration test for the different cases we are expecting (failure and happy paths)
 - For more resilient we could include *E2E* for the happy paths only.
 - Generators for testing
 - At the moment the state management is kind of tricky and `ReactFlow` does not recommend to use their on `state` hooks for procution, so we would need to migrate that and make sure that we implement the same handlers the library has by default so we don't loose functionality.
 - Some components are a bit big so I'd improve that by using the `container` pattern so we cam make testing faster and more modular.
 - Node editor panel could be improved a bit the visuals by adding tabs (similar figma pattern). We could remove the add nodes panel and place a floating bottom bar similar to Apple's navigation or Figjams sticker bars.
+- CI (Lint, test & build)
