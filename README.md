@@ -2,7 +2,7 @@
 # AI agents workflow builder
 
 Minimal implementation of a AI agen workflow builder using Vite, Shadcn & ReactFlow
-Check live here: 
+Check live here: [voice-agent-builder](https://voice-agent-builder.vercel.app/)
 
 ## Run Locally
 
