@@ -15,7 +15,7 @@ Clone the project
 Go to the project directory
 
 ```bash
-  cd workflow-builder 
+  cd workflow-builder  
 ```
 
 Install dependencies 
