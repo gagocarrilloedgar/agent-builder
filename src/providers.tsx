@@ -1,5 +1,5 @@
 
-import { ThemeProvider } from "@/components/ThemeProvider.tsx";
+import { ThemeProvider } from "@/components/theme-provider.tsx";
 import { ReactFlowProvider } from "@xyflow/react";
 
 import { Toaster } from "./components/ui/toaster.tsx";
