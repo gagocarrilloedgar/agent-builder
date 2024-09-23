@@ -7,7 +7,7 @@ import { Tooltip } from "@radix-ui/react-tooltip";
 import { Handle, NodeProps, Position } from "@xyflow/react";
 import { AlertCircle, EllipsisVertical } from "lucide-react";
 import { ComponentPropsWithoutRef, memo, useEffect } from "react";
-import { useCurrentWorkflow } from "../useCurrentWorkflow";
+import { useCurrentWorkflow } from "../useWorkflow";
 
 type BaseNodeProps = NodeProps &
   ComponentPropsWithoutRef<"div"> & {

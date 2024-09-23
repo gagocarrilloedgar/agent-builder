@@ -22,12 +22,12 @@ import {
   userDataType,
   UserDataType,
 } from "@/modules/workflows/domain";
-import { useDnD } from "@/pages/Builder/DnDProvider";
+import { useDnD } from "@/pages/Workflow/DragDropProvider";
 
 import { capitalize } from "@/shared/lib/capitalize";
 import { FoldHorizontal, UnfoldHorizontal } from "lucide-react";
 import { DragEvent, PropsWithChildren, useState } from "react";
-import { useCurrentWorkflow } from "./useCurrentWorkflow";
+import { useCurrentWorkflow } from "./useWorkflow";
 
 export function NodeEditor() {
   const [expanded, setExpanded] = useState(false);

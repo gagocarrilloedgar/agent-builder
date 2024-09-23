@@ -21,7 +21,7 @@ import {
   userDataType,
   UserDataType,
 } from "@/modules/workflows/domain";
-import { useDnD } from "@/pages/Builder/DnDProvider";
+import { useDnD } from "@/pages/Workflow/DragDropProvider";
 
 import { capitalize } from "@/shared/lib/capitalize";
 import {
@@ -33,7 +33,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { DragEvent, PropsWithChildren, useState } from "react";
-import { useCurrentWorkflow } from "./Builder/useCurrentWorkflow";
+import { useCurrentWorkflow } from "./Workflow/useWorkflow";
 
 export function Layout({ children }: PropsWithChildren) {
   const {

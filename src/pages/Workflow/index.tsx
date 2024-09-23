@@ -10,13 +10,13 @@ import {
 } from "@xyflow/react";
 
 import { NodeNodeTypes } from "@/modules/workflows/domain";
-import { useDnD } from "@/pages/Builder/DnDProvider";
+import { useDnD } from "@/pages/Workflow/DragDropProvider";
 import "@xyflow/react/dist/style.css";
 import { DragEvent, useCallback, useEffect, useState } from "react";
 import { NewNodeDialog } from "./NewNodeDialog";
 import { NodeEditor } from "./NodeEditor";
 import { EndCallNode, StartCallNode, WaypointNode } from "./Nodes";
-import { useCurrentWorkflow } from "./useCurrentWorkflow";
+import { useCurrentWorkflow } from "./useWorkflow";
 
 // Constants for spacing
 

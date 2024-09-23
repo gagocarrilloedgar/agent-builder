@@ -3,8 +3,8 @@ import { ThemeProvider } from "@/components/theme-provider.tsx";
 import { ReactFlowProvider } from "@xyflow/react";
 
 import { Toaster } from "./components/ui/toaster.tsx";
-import { DnDProvider } from "./pages/Builder/DnDProvider.tsx";
-import WorkflowProvider from "./pages/Builder/WorkflowProvider.tsx";
+import { DnDProvider } from "./pages/Workflow/DragDropProvider.tsx";
+import WorkflowProvider from "./pages/Workflow/WorkflowsProvider.tsx";
 
 import { RouterProvider } from "react-router-dom";
 import { Layout } from "./components/Layout.tsx";
