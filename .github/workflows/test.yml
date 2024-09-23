@@ -12,7 +12,6 @@ jobs:
 
     env:
       NODE_ENV: production
-      MY_CUSTOM_VAR: my_value
 
     steps:
     - name: Checkout code
